@@ -21,6 +21,17 @@ import {
  * @see https://orm.drizzle.team/docs/goodies#multi-project-schema
  */
 export const createTable = pgTableCreator((name) => `statuszen_${name}`);
+// Organizations Table
+export const organizations = createTable(
+  "organizations",
+  {
+    id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
+    name: varchar("name", { length: 255 }).notNull(),
+    slug: varchar("slug", { length: 255 }).unique().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(() => new Date()),
+  }
+);
 
 // Users Table
 export const users = createTable(
@@ -31,23 +42,12 @@ export const users = createTable(
     email: varchar("email", { length: 255 }).unique().notNull(),
     name: varchar("name", { length: 255 }),
     role: varchar("role", { length: 50 }).default("Member"),
+    organizationId: integer("organization_id").references(() => organizations.id, { onDelete: "cascade" }),
     createdAt: timestamp("created_at", { withTimezone: true }).default(sql`CURRENT_TIMESTAMP`).notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(() => new Date()),
   }
 );
 
-// Organizations Table
-export const organizations = createTable(
-  "organizations",
-  {
-    id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
-    name: varchar("name", { length: 255 }).notNull(),
-    slug: varchar("slug", { length: 255 }).unique().notNull(),
-    ownerId: integer("owner_id").references(() => users.id, { onDelete: "cascade" }),
-    createdAt: timestamp("created_at", { withTimezone: true }).default(sql`CURRENT_TIMESTAMP`).notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(() => new Date()),
-  }
-);
 
 // Teams Table
 export const teams = createTable(
@@ -61,20 +61,6 @@ export const teams = createTable(
   }
 );
 
-// Team Members Table
-export const teamMembers = createTable(
-  "team_members",
-  {
-    id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
-    teamId: integer("team_id").references(() => teams.id, { onDelete: "cascade" }),
-    userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
-    role: varchar("role", { length: 50 }).default("Member"),
-    joinedAt: timestamp("joined_at", { withTimezone: true }).default(sql`CURRENT_TIMESTAMP`).notNull(),
-  },
-  (teamMember) => ({
-    uniqueTeamUser: unique("unique_team_user").on(teamMember.teamId, teamMember.userId),
-  })
-);
 
 // services.ts
 export const services = createTable(
