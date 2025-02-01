@@ -6,7 +6,9 @@ import {
   index,
   integer,
   pgTableCreator,
+  text,
   timestamp,
+  unique,
   varchar,
 } from "drizzle-orm/pg-core";
 
@@ -18,19 +20,115 @@ import {
  */
 export const createTable = pgTableCreator((name) => `statuszen_${name}`);
 
-export const posts = createTable(
-  "post",
+// Users Table
+export const users = createTable(
+  "users",
   {
     id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
-    name: varchar("name", { length: 256 }),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
-      () => new Date()
-    ),
+    clerkUserId: varchar("clerk_user_id", { length: 255 }).unique().notNull(),
+    email: varchar("email", { length: 255 }).unique().notNull(),
+    name: varchar("name", { length: 255 }),
+    role: varchar("role", { length: 50 }).default("Member"),
+    createdAt: timestamp("created_at", { withTimezone: true }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(() => new Date()),
+  }
+);
+
+// Organizations Table
+export const organizations = createTable(
+  "organizations",
+  {
+    id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
+    name: varchar("name", { length: 255 }).notNull(),
+    slug: varchar("slug", { length: 255 }).unique().notNull(),
+    ownerId: integer("owner_id").references(() => users.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(() => new Date()),
+  }
+);
+
+// Teams Table
+export const teams = createTable(
+  "teams",
+  {
+    id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
+    name: varchar("name", { length: 255 }).notNull(),
+    organizationId: integer("organization_id").references(() => organizations.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(() => new Date()),
+  }
+);
+
+// Team Members Table
+export const teamMembers = createTable(
+  "team_members",
+  {
+    id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
+    teamId: integer("team_id").references(() => teams.id, { onDelete: "cascade" }),
+    userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
+    role: varchar("role", { length: 50 }).default("Member"),
+    joinedAt: timestamp("joined_at", { withTimezone: true }).default(sql`CURRENT_TIMESTAMP`).notNull(),
   },
-  (example) => ({
-    nameIndex: index("name_idx").on(example.name),
+  (teamMember) => ({
+    uniqueTeamUser: unique("unique_team_user").on(teamMember.teamId, teamMember.userId),
   })
 );
+
+// Services Table
+export const services = createTable(
+  "services",
+  {
+    id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
+    name: varchar("name", { length: 255 }).notNull(),
+    description: text("description"),
+    status: varchar("status", { length: 50 }).default("Operational"),
+    organizationId: integer("organization_id").references(() => organizations.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(() => new Date()),
+  }
+);
+
+// Incidents Table
+export const incidents = createTable(
+  "incidents",
+  {
+    id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
+    title: varchar("title", { length: 255 }).notNull(),
+    description: text("description"),
+    status: varchar("status", { length: 50 }).default("Open"),
+    impact: varchar("impact", { length: 50 }),
+    serviceId: integer("service_id").references(() => services.id, { onDelete: "cascade" }),
+    createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+    startedAt: timestamp("started_at", { withTimezone: true }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(() => new Date()),
+  }
+);
+
+// Incident Updates Table
+export const incidentUpdates = createTable(
+  "incident_updates",
+  {
+    id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
+    incidentId: integer("incident_id").references(() => incidents.id, { onDelete: "cascade" }),
+    message: text("message").notNull(),
+    status: varchar("status", { length: 50 }).default("Investigating"),
+    createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+  }
+);
+
+// Status History Table
+export const statusHistory = createTable(
+  "status_history",
+  {
+    id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
+    serviceId: integer("service_id").references(() => services.id, { onDelete: "cascade" }),
+    previousStatus: varchar("previous_status", { length: 50 }),
+    currentStatus: varchar("current_status", { length: 50 }).notNull(),
+    changedBy: integer("changed_by").references(() => users.id, { onDelete: "set null" }),
+    changedAt: timestamp("changed_at", { withTimezone: true }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+  }
+);
+
