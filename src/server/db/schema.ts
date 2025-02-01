@@ -1,126 +1,116 @@
-// Example model schema from the Drizzle docs
-// https://orm.drizzle.team/docs/sql-schema-declaration
+import { pgTableCreator, varchar, uuid, timestamp, foreignKey, text, jsonb, integer, boolean } from 'drizzle-orm/pg-core';
+import { relations, sql } from 'drizzle-orm';
 
-import { sql } from "drizzle-orm";
-import {
-  boolean,
-  index,
-  integer,
-  json,
-  pgTableCreator,
-  text,
-  timestamp,
-  unique,
-  varchar,
-} from "drizzle-orm/pg-core";
-
-/**
- * This is an example of how to use the multi-project schema feature of Drizzle ORM. Use the same
- * database instance for multiple projects.
- *
- * @see https://orm.drizzle.team/docs/goodies#multi-project-schema
- */
-export const createTable = pgTableCreator((name) => `statuszen_${name}`);
-// Organizations Table
-export const organizations = createTable(
-  "organizations",
-  {
-    id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
-    name: varchar("name", { length: 255 }).notNull(),
-    slug: varchar("slug", { length: 255 }).unique().notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true }).default(sql`CURRENT_TIMESTAMP`).notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(() => new Date()),
-  }
-);
+export const createTable = pgTableCreator((name) => `democheck_${name}`);
 
 // Users Table
-export const users = createTable(
-  "users",
-  {
-    id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
-    clerkUserId: varchar("clerk_user_id", { length: 255 }).unique().notNull(),
-    email: varchar("email", { length: 255 }).unique().notNull(),
-    name: varchar("name", { length: 255 }),
-    role: varchar("role", { length: 50 }).default("Member"),
-    organizationId: integer("organization_id").references(() => organizations.id, { onDelete: "cascade" }),
-    createdAt: timestamp("created_at", { withTimezone: true }).default(sql`CURRENT_TIMESTAMP`).notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(() => new Date()),
-  }
-);
+export const users = createTable("user", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orgId: uuid("org_id"),
+  fname: varchar("fname", { length: 255 }),
+  lname: varchar("lname", { length: 255 }),
+  email: varchar("email", { length: 255 }).notNull(),
+  clerkId: varchar("clerk_id", { length: 255 }).notNull(),
+  role: varchar("role", { length: 50 }),
+});
 
+// Organizations Table
+export const organizations = createTable("organization", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  ownerId: uuid("owner_id"),
+});
 
-// Teams Table
-export const teams = createTable(
-  "teams",
-  {
-    id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
-    name: varchar("name", { length: 255 }).notNull(),
-    organizationId: integer("organization_id").references(() => organizations.id, { onDelete: "cascade" }),
-    createdAt: timestamp("created_at", { withTimezone: true }).default(sql`CURRENT_TIMESTAMP`).notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(() => new Date()),
-  }
-);
+// Groups Table
+export const groups = createTable("group", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orgId: uuid("org_id"),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+});
 
-
-// services.ts
-export const services = createTable(
-  "services",
-  {
-    id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
-    name: varchar("name", { length: 255 }).notNull(),
-    description: text("description"),
-    url: varchar("url", { length: 512 }).notNull(),
-    status: varchar("status", { length: 50 }).default("Operational"),
-    isPublic: boolean("is_public").default(false),
-    organizationId: integer("organization_id")
-      .references(() => organizations.id, { onDelete: "cascade" }),  // Optional reference
-    createdAt: timestamp("created_at", { withTimezone: true }).default(sql`CURRENT_TIMESTAMP`).notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(() => new Date()),
-  }
-);
-
-
-// Incidents Table
-export const incidents = createTable(
-  "incidents",
-  {
-    id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
-    title: varchar("title", { length: 255 }).notNull(),
-    description: text("description"),
-    status: varchar("status", { length: 50 }).default("Open"),
-    impact: varchar("impact", { length: 50 }),
-    serviceId: integer("service_id").references(() => services.id, { onDelete: "cascade" }),
-    createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
-    startedAt: timestamp("started_at", { withTimezone: true }).default(sql`CURRENT_TIMESTAMP`).notNull(),
-    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
-    createdAt: timestamp("created_at", { withTimezone: true }).default(sql`CURRENT_TIMESTAMP`).notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(() => new Date()),
-  }
-);
-
-// Incident Updates Table
-export const incidentUpdates = createTable(
-  "incident_updates",
-  {
-    id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
-    incidentId: integer("incident_id").references(() => incidents.id, { onDelete: "cascade" }),
-    message: text("message").notNull(),
-    status: varchar("status", { length: 50 }).default("Investigating"),
-    createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
-    createdAt: timestamp("created_at", { withTimezone: true }).default(sql`CURRENT_TIMESTAMP`).notNull(),
-  }
-);
+// Components Table
+export const components = createTable("component", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  groupId: uuid("group_id"),
+  orgId: uuid("org_id"),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  url: varchar("url", { length: 255 }),
+  status: varchar("status", { length: 50 }),
+});
 
 // Status History Table
-export const statusHistory = createTable(
-  "status_history",
-  {
-    id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
-    serviceId: integer("service_id").references(() => services.id, { onDelete: "cascade" }),
-    previousStatus: varchar("previous_status", { length: 50 }),
-    currentStatus: varchar("current_status", { length: 50 }).notNull(),
-    changedBy: integer("changed_by").references(() => users.id, { onDelete: "set null" }),
-    changedAt: timestamp("changed_at", { withTimezone: true }).default(sql`CURRENT_TIMESTAMP`).notNull(),
-  }
-);
+export const statusHistory = createTable("status_history", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  componentId: uuid("component_id"),
+  status: varchar("status", { length: 50 }),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).default(sql`CURRENT_TIMESTAMP`),
+  notes: text("notes"),
+});
 
+// Incidents Table
+export const incidents = createTable("incident", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  componentId: uuid("component_id"),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  status: varchar("status", { length: 50 }),
+  occurredAt: timestamp("occurred_at", { withTimezone: true }).default(sql`CURRENT_TIMESTAMP`),
+});
+
+// Public Components Table
+export const publicComponents = createTable("public_component", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  componentId: uuid("component_id"),
+});
+
+// Relations
+export const usersRelations = relations(users, ({ many }) => ({
+  organizations: many(organizations),
+}));
+
+export const organizationsRelations = relations(organizations, ({ many, one }) => ({
+  users: many(users),
+  groups: many(groups),
+  components: many(components),
+  owner: one(users, {
+    fields: [organizations.ownerId],
+    references: [users.id],
+  }),
+}));
+
+export const groupsRelations = relations(groups, ({ many, one }) => ({
+  components: many(components),
+  organization: one(organizations, {
+    fields: [groups.orgId],
+    references: [organizations.id],
+  }),
+}));
+
+export const componentsRelations = relations(components, ({ many, one }) => ({
+  group: one(groups, {
+    fields: [components.groupId],
+    references: [groups.id],
+  }),
+  organization: one(organizations, {
+    fields: [components.orgId],
+    references: [organizations.id],
+  }),
+  statusHistory: many(statusHistory),
+  incidents: many(incidents),
+}));
+
+export const statusHistoryRelations = relations(statusHistory, ({ one }) => ({
+  component: one(components, {
+    fields: [statusHistory.componentId],
+    references: [components.id],
+  }),
+}));
+
+export const incidentsRelations = relations(incidents, ({ one }) => ({
+  component: one(components, {
+    fields: [incidents.componentId],
+    references: [components.id],
+  }),
+}));

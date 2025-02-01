@@ -1,6 +1,6 @@
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { z } from "zod";
-import { organizations, services, teams } from "~/server/db/schema";
+import { organizations, services, teams, users } from "~/server/db/schema";
 import { sql } from "drizzle-orm";
 
 export const organizationDetailsRouter = createTRPCRouter({
@@ -17,8 +17,8 @@ export const organizationDetailsRouter = createTRPCRouter({
       .from(organizations)
       .innerJoin(users, sql`${organizations.id} = ${users.organizationId}`)
       .where(sql`${users.id} = ${input.userId}`)
-      .limit(1); // Only one organization per user
-  });
+      .limit(1); 
+  }),
 
 
 
