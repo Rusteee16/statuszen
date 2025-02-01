@@ -19,13 +19,22 @@ export const organizationServiceRouter = createTRPCRouter({
   }),
 
   createService: publicProcedure
-    .input(z.object({ name: z.string(), description: z.string().optional(), status: z.string().optional(), organizationId: z.number() }))
+    .input(z.object({
+      name: z.string(),
+      description: z.string().optional(),
+      status: z.string().optional(),
+      organizationId: z.number(),
+      url: z.string().url(),
+      isPublic: z.boolean().default(false),
+    }))
     .mutation(async ({ ctx, input }) => {
       await ctx.db.insert(services).values({
         name: input.name,
         description: input.description,
-        status: input.status,
+        status: input.status ?? "Operational",
         organizationId: input.organizationId,
+        url: input.url,
+        isPublic: input.isPublic,
       });
     }),
 

@@ -3,8 +3,10 @@
 
 import { sql } from "drizzle-orm";
 import {
+  boolean,
   index,
   integer,
+  json,
   pgTableCreator,
   text,
   timestamp,
@@ -74,19 +76,23 @@ export const teamMembers = createTable(
   })
 );
 
-// Services Table
+// services.ts
 export const services = createTable(
   "services",
   {
     id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
     name: varchar("name", { length: 255 }).notNull(),
     description: text("description"),
+    url: varchar("url", { length: 512 }).notNull(),
     status: varchar("status", { length: 50 }).default("Operational"),
-    organizationId: integer("organization_id").references(() => organizations.id, { onDelete: "cascade" }),
+    isPublic: boolean("is_public").default(false),
+    organizationId: integer("organization_id")
+      .references(() => organizations.id, { onDelete: "cascade" }),  // Optional reference
     createdAt: timestamp("created_at", { withTimezone: true }).default(sql`CURRENT_TIMESTAMP`).notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(() => new Date()),
   }
 );
+
 
 // Incidents Table
 export const incidents = createTable(
