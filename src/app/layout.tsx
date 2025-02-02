@@ -1,4 +1,7 @@
 import "~/styles/globals.css";
+import { Inter } from 'next/font/google'
+
+const inter = Inter({ subsets: ['latin'] })
 
 import { GeistSans } from "geist/font/sans";
 import { type Metadata } from "next";
@@ -17,8 +20,10 @@ export default function RootLayout({
   return (
     <ClerkProvider>
     <html lang="en" className={`${GeistSans.variable}`}>
-      <body>
-        {children}
+    <body className={`dark bg-gray-900 text-white ${inter.className}`}>
+        <main className="p-4">
+          {children}
+        </main>
       </body>
     </html>
     </ClerkProvider>

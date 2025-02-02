@@ -1,7 +1,5 @@
 'use client';
-
-import { NextResponse } from 'next/server';
-import { publicComponents } from '~/server/db/schema';
+import { CheckCircle, AlertTriangle, XCircle, HelpCircle } from 'lucide-react'
 import { z } from 'zod';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -13,6 +11,21 @@ interface Service {
   url: string;
   status: string;
   isPublic: boolean;
+}
+
+function getStatusIcon(status: Service['status']) {
+  switch (status) {
+    case 'OPERATIONAL':
+      return <CheckCircle className="text-green-500 w-5 h-5 inline-block mr-1" />
+    case 'PERFORMANCE_ISSUES':
+      return <AlertTriangle className="text-yellow-500 w-5 h-5 inline-block mr-1" />
+    case 'PARTIAL_OUTAGE':
+      return <AlertTriangle className="text-orange-500 w-5 h-5 inline-block mr-1" />
+    case 'MAJOR_OUTAGE':
+      return <XCircle className="text-red-500 w-5 h-5 inline-block mr-1" />
+    default:
+      return <HelpCircle className="text-gray-500 w-5 h-5 inline-block mr-1" />
+  }
 }
 
 export default function PublicStatus() {
@@ -30,7 +43,6 @@ export default function PublicStatus() {
     try {
       const response = await fetch('/api/v3/publiccomponent');
       const componentIDs = await response.json();
-      console.log(componentIDs);
 
       const componentDetails = await Promise.all(
         componentIDs.map(async (item: { id: string,componentId: string }) => {
@@ -45,7 +57,6 @@ export default function PublicStatus() {
         description: service.description ?? 'No description available',
         status: service.status ?? 'UNKNOWN',
       }));
-      console.log(publicServices);
 
       setComponents(publicServices);
     } catch (error: any) {
@@ -55,37 +66,56 @@ export default function PublicStatus() {
 
   useEffect(() => {
     fetchComponents();
-    console.log(components);
   }, []);
 
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
-        <thead className="bg-gray-200">
-          <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Link</th>
-          </tr>
-        </thead>
-        <tbody>
-          {components.map((item, index) => (
-            <tr key={index} className="border-b">
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.name}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">{item.status}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.description}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-500 hover:underline">
-              {item.url ? (
-                  <Link href={item.url}>View</Link>
-                ) : (
-                  <span className="text-gray-400">No Link Available</span>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="space-y-6">
+      <div className="bg-gray-800 p-6 rounded-lg shadow-md">
+        <h2 className="text-3xl font-bold mb-2">Welcome to StatusZen</h2>
+        <p className="text-gray-300">
+          Real-time status updates for all your services. Explore the public
+          services below!
+        </p>
+      </div>
+
+      <div className="bg-gray-800 p-4 rounded-lg shadow-md">
+        <h3 className="text-xl font-semibold mb-4">Public Status</h3>
+        <div className="overflow-x-auto">
+          <table className="min-w-full bg-gray-900 border border-gray-700 rounded-lg overflow-hidden">
+            <thead className="bg-gray-700">
+              <tr>
+                <th className="px-4 py-2 text-left font-medium">Name</th>
+                <th className="px-4 py-2 text-left font-medium">Status</th>
+                <th className="px-4 py-2 text-left font-medium">Details</th>
+                <th className="px-4 py-2 text-left font-medium">Link</th>
+              </tr>
+            </thead>
+            <tbody>
+              {components.map((service) => (
+                <tr key={service.id} className="border-b border-gray-800">
+                  <td className="px-4 py-2">{service.name}</td>
+                  <td className="px-4 py-2">
+                    {getStatusIcon(service.status)}
+                    {service.status}
+                  </td>
+                  <td className="px-4 py-2">
+                    {service.description || 'No description available'}
+                  </td>
+                  <td className="px-4 py-2 underline text-blue-400">
+                    {service.url ? (
+                      <Link href={service.url} target="_blank">
+                        Visit
+                      </Link>
+                    ) : (
+                      '—'
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }
