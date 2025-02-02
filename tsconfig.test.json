@@ -1,0 +1,12 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+      "module": "ES2022",           // Set module to a compatible format
+      "moduleResolution": "Node",   // Change from 'bundler' to 'Node'
+      "noEmit": false,              // Enable emitting JS files
+      "outDir": "dist"              // Output directory for compiled files
+    },
+    "include": ["src/tests/**/*.ts"],
+    "exclude": ["node_modules"]
+  }
+  
