@@ -1,8 +1,10 @@
-import { userTeamRouter } from "~/server/api/routers/userTeam";
-import { organizationServiceRouter } from "~/server/api/routers/organizationService";
-import { incidentStatusRouter } from "~/server/api/routers/incidentStatus";
-import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
-import { organizationDetailsRouter } from "./routers/organizationDetails";
+import { componentRouter } from "./routers/componentRouter";
+import { groupRouter } from "./routers/groupRouter";
+import { incidentRouter } from "./routers/incidentRouter";
+import { organizationRouter } from "./routers/organizationRouter";
+import { statusHistoryRouter } from "./routers/statusHistoryRouter";
+import { userRouter } from "./routers/userRouter";
+import { createTRPCRouter, createCallerFactory } from "./trpc";
 
 /**
  * This is the primary router for your server.
@@ -10,10 +12,12 @@ import { organizationDetailsRouter } from "./routers/organizationDetails";
  * All routers added in /api/routers should be manually added here.
  */
 export const appRouter = createTRPCRouter({
-  userTeam: userTeamRouter,
-  organizationService: organizationServiceRouter,
-  incidentStatus: incidentStatusRouter,
-  organizationDetails: organizationDetailsRouter,
+  componentRouter: componentRouter,
+  groupRouter: groupRouter,
+  incidentRouter: incidentRouter,
+  organizationRouter: organizationRouter,
+  statusHistoryRouter: statusHistoryRouter, 
+  userRouter: userRouter,
 });
 
 // export type definition of API

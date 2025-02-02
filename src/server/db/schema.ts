@@ -1,6 +1,13 @@
 import { pgTableCreator, varchar, uuid, timestamp, text } from 'drizzle-orm/pg-core';
 import { relations, sql } from 'drizzle-orm';
 
+export type ComponentStatus =
+  | "OPERATIONAL"
+  | "PERFORMANCE_ISSUES"
+  | "PARTIAL_OUTAGE"
+  | "MAJOR_OUTAGE"
+  | "UNKNOWN";
+
 // Create tables
 export const createTable = pgTableCreator(name => `democheck_${name}`);
 
@@ -45,7 +52,7 @@ export const components = createTable("component", {
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
   url: varchar("url", { length: 255 }),
-  status: varchar("status", { length: 50 }),
+  status: varchar("status", { length: 50 }).notNull().default("UNKNOWN"),
 });
 
 // Status History Table

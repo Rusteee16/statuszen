@@ -6,6 +6,8 @@
  * TL;DR - This is where all the tRPC server stuff is created and plugged in. The pieces you will
  * need to use are documented accordingly near the end.
  */
+import { componentQueue, worker, addComponentToQueue } from "~/server/bullmq/componentQueue";
+
 import { auth } from "@clerk/nextjs/server";
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
@@ -26,11 +28,38 @@ import { db } from "~/server/db";
  * @see https://trpc.io/docs/server/context
  */
 export const createTRPCContext = async (opts: { headers: Headers }) => {
+  // Initialize the queue with default components if it's empty
+  const jobCounts = await componentQueue.getJobCounts();
+  
+  if (jobCounts.waiting === 0 && jobCounts.active === 0) {
+    console.log("Initializing BullMQ Queue...");
+
+    const defaultComponents = [
+      { id: "1", url: "https://api.github.com" },                      // GitHub API status
+      { id: "2", url: "https://jsonplaceholder.typicode.com/posts" }, // Fake API for testing
+      { id: "3", url: "https://api.openweathermap.org/data/2.5/weather?q=London&appid=demo" }, // OpenWeatherMap API
+      { id: "4", url: "https://httpstat.us/200" },                    // Returns HTTP 200 OK
+      { id: "5", url: "https://httpstat.us/503" },                    // Returns HTTP 503 Service Unavailable
+      { id: "6", url: "https://pokeapi.co/api/v2/pokemon/ditto" },    // PokeAPI example
+      { id: "7", url: "https://reqres.in/api/users/2" },              // Reqres API for testing
+      { id: "8", url: "https://api.spacexdata.com/v4/launches/latest" }, // SpaceX API for latest launches
+      { id: "9", url: "https://api.coinbase.com/v2/prices/BTC-USD/spot" }, // Coinbase API for Bitcoin price
+      { id: "10", url: "https://api.agify.io?name=michael" }           // Predicts age based on name
+    ];
+    
+
+    for (const component of defaultComponents) {
+      await addComponentToQueue(component);
+      console.log(`Added component ${component.id} to the queue.`);
+    }
+  }
+
   return {
     db,
     ...opts,
   };
 };
+
 
 /**
  * 2. INITIALIZATION
@@ -120,3 +149,4 @@ const isAuthenticated = t.middleware(async ({ ctx, next }) => {
 
 
 export const protectedProcedure = t.procedure.use(isAuthenticated);
+
