@@ -9,7 +9,7 @@ export type ComponentStatus =
   | "UNKNOWN";
 
 // Create tables
-export const createTable = pgTableCreator(name => `democheck_${name}`);
+export const createTable = pgTableCreator(name => `statuszen_${name}`);
 
 // Organizations Table
 export const organizations = createTable("organization", {
