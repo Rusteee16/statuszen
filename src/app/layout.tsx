@@ -6,7 +6,7 @@ const inter = Inter({ subsets: ['latin'] })
 import { GeistSans } from "geist/font/sans";
 import { type Metadata } from "next";
 
-import { ClerkProvider } from "@clerk/nextjs";
+import { ClerkProvider, SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 
 export const metadata: Metadata = {
   title: "Create T3 App",
@@ -19,9 +19,16 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <ClerkProvider>
+      
     <html lang="en" className={`${GeistSans.variable}`}>
     <body className={`dark bg-gray-900 text-white ${inter.className}`}>
         <main className="p-4">
+        <SignedOut>
+            <SignInButton />
+          </SignedOut>
+          <SignedIn>
+            <UserButton />
+          </SignedIn>
           {children}
         </main>
       </body>
